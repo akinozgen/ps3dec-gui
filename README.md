@@ -1,4 +1,4 @@
-# PS3 Game Decryptor GUI
+# PS3 ISO Decryptor GUI
 
 A simple GUI application for decrypting and extracting PS3 game ISOs using `ps3dec.exe` and `7z.exe`.
 
