@@ -25,9 +25,17 @@ function Show-MessageBox {
     [System.Windows.Forms.MessageBox]::Show($Message, $Title, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 }
 
+function Log-Error {
+    param (
+        [string]$Message
+    )
+    $errorLogFile = "error_log.txt"
+    Add-Content -Path $errorLogFile -Value $Message
+}
+
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "PS3 Game Decryptor"
-$form.Size = New-Object System.Drawing.Size(450,450)
+$form.Size = New-Object System.Drawing.Size(450,550)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $form.MaximizeBox = $false
@@ -139,9 +147,21 @@ $btnDecrypt.Location = New-Object System.Drawing.Point(10,300)
 $btnDecrypt.Size = New-Object System.Drawing.Size(120,30)
 $form.Controls.Add($btnDecrypt)
 
+$btnFindDKey = New-Object System.Windows.Forms.Button
+$btnFindDKey.Text = "DKEY Index"
+$btnFindDKey.Location = New-Object System.Drawing.Point(320,300)
+$btnFindDKey.Size = New-Object System.Drawing.Size(100,30)
+$form.Controls.Add($btnFindDKey)
+
+$btnIsoLink = New-Object System.Windows.Forms.Button
+$btnIsoLink.Text = "ISO Index"
+$btnIsoLink.Location = New-Object System.Drawing.Point(320,340)
+$btnIsoLink.Size = New-Object System.Drawing.Size(100,30)
+$form.Controls.Add($btnIsoLink)
+
 $btnAbout = New-Object System.Windows.Forms.Button
 $btnAbout.Text = "About"
-$btnAbout.Location = New-Object System.Drawing.Point(320,370)
+$btnAbout.Location = New-Object System.Drawing.Point(320,410)
 $btnAbout.Size = New-Object System.Drawing.Size(100,30)
 $form.Controls.Add($btnAbout)
 
@@ -165,56 +185,69 @@ $btnSelectPS3DecPath.Add_Click({
     $txtPS3DecPath.Text = Select-FileDialog -Filter "ps3dec.exe (ps3dec.exe)|ps3dec.exe"
 })
 
-$btnDecrypt.Add_Click({
-    $isoPath = $txtISO.Text
-    $dkeyPath = $txtDKey.Text
-    $extractLocation = $txtExtractLocation.Text
-    $ps3DecPath = $txtPS3DecPath.Text
-    $sevenZPath = $txt7zPath.Text
-    if ([string]::IsNullOrWhiteSpace($isoPath) -or [string]::IsNullOrWhiteSpace($dkeyPath)) {
-        Show-MessageBox -Message "Please select both ISO and DKey files."
-        return
-    }
-    $gameName = [System.IO.Path]::GetFileNameWithoutExtension($isoPath)
-    $outputPath = "$extractLocation\$gameName"
-    $decryptedISO = "$isoPath`_decrypted.iso"
-    $dkey = Get-Content -Path $dkeyPath
-    
-    # Decrypt the ISO
-    & $ps3DecPath --iso $isoPath --dk $dkey --tc 64
-    
-    # Create the output directory
-    if (-not (Test-Path -Path $outputPath)) {
-        New-Item -ItemType Directory -Path $outputPath | Out-Null
-    }
-    
-    # Extract the decrypted ISO
-    & "$sevenZPath" x "$decryptedISO" "-o$outputPath"
-    
-    # Delete the decrypted ISO file
-    Remove-Item -Path $decryptedISO -Force
-    
-    # Open the extract location in a new Explorer window
-    Start-Process explorer.exe $outputPath
-    
-    # Prompt the user to delete the original ISO and DKey files
-    $result = [System.Windows.Forms.MessageBox]::Show("Do you want to delete the original ISO and DKey files?", "Delete Files", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
-    if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
-        Remove-Item -Path $isoPath -Force
-        Remove-Item -Path $dkeyPath -Force
-    }
+$btnFindDKey.Add_Click({
+    Start-Process "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%203%20-%20Disc%20Keys%20TXT/" # Replace with the actual URL
+})
 
-    Show-MessageBox -Message "Decryption and extraction complete!" -Title "Success"
-    Save-Settings
+$btnIsoLink.Add_Click({
+    Start-Process "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%203/" # Replace with the actual URL
+})
+
+$btnDecrypt.Add_Click({
+    try {
+        $isoPath = $txtISO.Text
+        $dkeyPath = $txtDKey.Text
+        $extractLocation = $txtExtractLocation.Text
+        $ps3DecPath = $txtPS3DecPath.Text
+        $sevenZPath = $txt7zPath.Text
+        if ([string]::IsNullOrWhiteSpace($isoPath) -or [string]::IsNullOrWhiteSpace($dkeyPath)) {
+            Show-MessageBox -Message "Please select both ISO and DKey files."
+            return
+        }
+        $gameName = [System.IO.Path]::GetFileNameWithoutExtension($isoPath)
+        $outputPath = "$extractLocation\$gameName"
+        $decryptedISO = "$isoPath`_decrypted.iso"
+        $dkey = Get-Content -Path $dkeyPath
+        
+        # Decrypt the ISO
+        & $ps3DecPath --iso $isoPath --dk $dkey --tc 64 --skip
+        
+        # Create the output directory
+        if (-not (Test-Path -Path $outputPath)) {
+            New-Item -ItemType Directory -Path $outputPath | Out-Null
+        }
+        
+        # Extract the decrypted ISO
+        & "$sevenZPath" x "$decryptedISO" "-o$outputPath"
+        
+        # Delete the decrypted ISO file
+        Remove-Item -Path $decryptedISO -Force
+        
+        # Open the extract location in a new Explorer window
+        Start-Process explorer.exe $outputPath
+        
+        # Prompt the user to delete the original ISO and DKey files
+        $result = [System.Windows.Forms.MessageBox]::Show("Do you want to delete the original ISO and DKey files?", "Delete Files", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+        if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
+            Remove-Item -Path $isoPath -Force
+            Remove-Item -Path $dkeyPath -Force
+        }
+
+        Show-MessageBox -Message "Decryption and extraction complete!" -Title "Success"
+        Save-Settings
+    } catch {
+        Log-Error $_.Exception.Message
+        Show-MessageBox -Message "An error occurred. Please check error_log.txt for details." -Title "Error"
+    }
 })
 
 $btnAbout.Add_Click({
     $aboutMessage = @"
 PS3DEX GUI
 
-Made by [Your Name]
+Made by Akın Özgen <akinozgen17@outlook.com>
 
-[github link]
+https://github.com/akinozgen/ps3dec-gui
 "@
     Show-MessageBox -Message $aboutMessage -Title "About"
 })
