@@ -2,6 +2,8 @@
 
 A simple GUI application for decrypting and extracting PS3 game ISOs using `ps3dec.exe` and `7z.exe`.
 
+[![Download ps3dex_gui.exe](https://custom-icon-badges.demolab.com/badge/-Download-blue?style=for-the-badge&logo=download&logoColor=white "Download ps3dex_gui.exe")](https://github.com/akinozgen/ps3dec-gui/releases/download/0.1.0/ps3dec_gui.exe)
+
 ## Features
 
 - Decrypt PS3 game ISOs
