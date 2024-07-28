@@ -41,7 +41,6 @@ $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $form.MaximizeBox = $false
 $form.MinimizeBox = $false
 
-# Function to load settings from a file
 function Load-Settings {
     $settingsFile = "settings.txt"
     if (Test-Path $settingsFile) {
@@ -50,14 +49,12 @@ function Load-Settings {
         $txt7zPath.Text = $settings.SevenZPath
         $txtPS3DecPath.Text = $settings.PS3DecPath
     } else {
-        # Set default values if settings file does not exist
         $txtExtractLocation.Text = "D:\Lab\Emulation\PS3\GAMES"
         $txt7zPath.Text = "C:\Program Files\7-Zip\7z.exe"
         $txtPS3DecPath.Text = "D:\Lab\Emulation\PS3\ISO\ps3dec.exe"
     }
 }
 
-# Function to save settings to a file
 function Save-Settings {
     $settingsFile = "settings.txt"
     $settings = @{
@@ -186,11 +183,11 @@ $btnSelectPS3DecPath.Add_Click({
 })
 
 $btnFindDKey.Add_Click({
-    Start-Process "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%203%20-%20Disc%20Keys%20TXT/" # Replace with the actual URL
+    Start-Process "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%203%20-%20Disc%20Keys%20TXT/"
 })
 
 $btnIsoLink.Add_Click({
-    Start-Process "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%203/" # Replace with the actual URL
+    Start-Process "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%203/"
 })
 
 $btnDecrypt.Add_Click({
@@ -209,24 +206,18 @@ $btnDecrypt.Add_Click({
         $decryptedISO = "$isoPath`_decrypted.iso"
         $dkey = Get-Content -Path $dkeyPath
         
-        # Decrypt the ISO
         & $ps3DecPath --iso $isoPath --dk $dkey --tc 64 --skip
         
-        # Create the output directory
         if (-not (Test-Path -Path $outputPath)) {
             New-Item -ItemType Directory -Path $outputPath | Out-Null
         }
         
-        # Extract the decrypted ISO
         & "$sevenZPath" x "$decryptedISO" "-o$outputPath"
         
-        # Delete the decrypted ISO file
         Remove-Item -Path $decryptedISO -Force
         
-        # Open the extract location in a new Explorer window
         Start-Process explorer.exe $outputPath
         
-        # Prompt the user to delete the original ISO and DKey files
         $result = [System.Windows.Forms.MessageBox]::Show("Do you want to delete the original ISO and DKey files?", "Delete Files", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
         if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
             Remove-Item -Path $isoPath -Force
